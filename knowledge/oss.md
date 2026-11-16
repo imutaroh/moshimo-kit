@@ -18,6 +18,7 @@
 | React・React DOM | 19.2.3 | MIT | 画面を部品で組む | — |
 | TypeScript ほか型定義 | 5.9.3 ほか | — | 開発用（`devDependencies`） | — |
 | IBM Plex Sans JP / IBM Plex Mono | `shared/fonts/` のファイル | SIL OFL 1.1（`shared/fonts/OFL-*.txt`） | 画面の文字 | フォントのファイル単体で売らない。ライセンスのファイルを一緒に置く |
+| Quaternius の人物 | Ultimate Modular Men（2022-02）・Ultimate Modular Women（2022-04）から12体。glTF を glb にまとめ、man-suit の銃の部品を外した | CC0（`shared/models/quaternius/License-*.txt`） | `sim3d` の大人の人物 | 表記は不要。作者の新しい素材には別のライセンス（QAL：素材の再配布は禁止）の物があるので、足すときは1つずつ確かめる |
 | Kenney の 3D 素材 5集 | Food Kit 2.0・Furniture Kit 2.0・Mini Characters 2.0・Car Kit 3.1・City Kit Commercial 2.1 | CC0（各集の `License.txt`） | `sim3d` の絵（`shared/models/kenney/`） | 表記は不要（作者への表記は任意と `License.txt` にある）。ライセンスのファイルを消さない |
 | ffmpeg | 未確認 | 未確認 | 音を重ねる。解説動画では Remotion に同梱の物（`npx remotion ffmpeg`）を使っていた | — |
 
@@ -55,7 +56,7 @@
 | Kenney | CC0。表記不要 | 手元の `License.txt` で確かめた |
 | Poly Haven | 全部 CC0。商用可・表記不要・再配布可。サイトの自動取得は禁止。ロゴ・レンダー画像・文章は CC0 の対象外 | 公式ページで確かめた |
 | Poly Pizza | モデルごとに CC0 か CC-BY（BY は表記が必須）。1つずつ確かめる。AI の学習目的の自動取得は禁止 | 公式ページで確かめた |
-| Quaternius | CC0 と書く二次情報はあるが、公式のトップにライセンスの文言が無く、License / FAQ のページも見つからなかった | **未確認** |
+| Quaternius | パックごとに違う。各パックのページに CC0 と書かれた物（Ultimate Modular Men / Women など）は CC0。それ以外は独自の QAL（商用可・表記不要・素材そのものの再配布は禁止）。https://quaternius.com/license.html | 公式のライセンスのページと、パックのページ・同梱の License.txt で確かめた（2026-11-16） |
 | Sketchfab | 有料素材：standard は商用可、editorial は商用・宣伝に使えない。素材単体の再配布・転売、ロゴや商標への利用などは禁止。無料の CC モデルは作品ごとの表示 | 有料素材は公式ページで確かめた。無料の CC モデルは**未確認** |
 | BlenderKit | — | **未確認**（取得に失敗） |
 | PLATEAU（国の 3D 都市データ） | CC BY 4.0 と互換。商用可。出典の表記が必要（例「出典：国土交通省 PLATEAUウェブサイト（URL）」）。加工したら「〜を加工して作成」と書く。国が作ったと誤解させる表示は禁止 | 公式ページで確かめた |
