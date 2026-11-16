@@ -1,9 +1,5 @@
 // mvscene/1 の 3D を再生する。Three.js の物体は最初に一度だけ作り、コマごとに変換・表示・不透明度だけを書き換える。
-// 状態はすべて useCurrentFrame() のコマ番号から決める（前のコマに頼らない）ので、順不同・並列で描いても同じ絵になる。
-import { useFrame, useThree } from "@react-three/fiber";
-import { ThreeCanvas } from "@remotion/three";
-import React, { useMemo } from "react";
-import { useCurrentFrame, useVideoConfig } from "remotion";
+// 状態はすべて、描くコマの番号だけから決める（前のコマに頼らない）ので、順不同・並列で描いても同じ絵になる。
 import * as THREE from "three";
 import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass.js";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
@@ -329,36 +325,27 @@ class Post {
   }
 }
 
-const Stage: React.FC<{ data: Loaded }> = ({ data }) => {
-  const frame = useCurrentFrame();
-  const { scene, camera, gl, size } = useThree();
-  const player = useMemo(() => new MvPlayer(data), [data]);
-  const post = useMemo(
-    () => (player.usesPost ? new Post(gl, scene, camera as THREE.PerspectiveCamera, size.width, size.height) : null),
-    [player, gl, scene, camera, size.width, size.height],
-  );
-  // ThreeCanvas は描画を useEffect（コミットの後）で行うので、描画の前にここで状態を書き換えておけば間に合う
-  player.update(frame, scene, camera as THREE.PerspectiveCamera);
-  gl.shadowMap.enabled = true;
-  // 後処理を使う場面データでは、描画をこちらで引き受ける（順番 1 の useFrame があると、既定の描画は行われない）
-  useFrame(() => post?.render(player.shot), post ? 1 : 0);
-  return <primitive object={player.root} />;
-};
-
-export const Player: React.FC<{ data: Loaded }> = ({ data }) => {
-  const { width, height } = useVideoConfig();
+// 3D を描く台。canvas に、コマ f の絵を描く
+export const createStage = (canvas: HTMLCanvasElement, data: Loaded, width: number, height: number) => {
   // 後処理は奥行きの値を読むので、対数の奥行きバッファが使えない。そのぶん、描ける距離の幅を狭くする
-  const post = data.scene.shots.some((s) => s.post);
-  return (
-    <ThreeCanvas
-      width={width}
-      height={height}
-      flat
-      shadows={{ type: THREE.PCFShadowMap }}
-      camera={post ? { near: 0.05, far: 3000 } : { near: 0.02, far: 1e7 }}
-      gl={{ antialias: true, logarithmicDepthBuffer: !post }}
-    >
-      <Stage data={data} />
-    </ThreeCanvas>
-  );
+  const usesPost = data.scene.shots.some((s) => s.post);
+  const gl = new THREE.WebGLRenderer({ canvas, antialias: true, logarithmicDepthBuffer: !usesPost, preserveDrawingBuffer: true });
+  gl.setPixelRatio(1);
+  gl.setSize(width, height, false);
+  gl.outputColorSpace = THREE.SRGBColorSpace;
+  gl.toneMapping = THREE.NoToneMapping; // 素材の色をそのまま出す
+  gl.shadowMap.enabled = true;
+  gl.shadowMap.type = THREE.PCFShadowMap;
+  const camera = usesPost ? new THREE.PerspectiveCamera(75, width / height, 0.05, 3000) : new THREE.PerspectiveCamera(75, width / height, 0.02, 1e7);
+  const scene = new THREE.Scene();
+  const player = new MvPlayer(data);
+  scene.add(player.root);
+  const post = player.usesPost ? new Post(gl, scene, camera, width, height) : null;
+  return {
+    draw(f: number) {
+      player.update(f, scene, camera);
+      if (post) post.render(player.shot);
+      else gl.render(scene, camera);
+    },
+  };
 };

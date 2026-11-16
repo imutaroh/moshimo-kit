@@ -8,9 +8,11 @@ projects/<ID>/baked/tracks.bin   コマごとの数値。Float32（リトルエ�
 projects/<ID>/baked/hud.json     コマごとの画面の文字
 projects/<ID>/episode.json       動画の大きさと、HUD の見た目（位置・大きさ・色）の上書き
 
-書き出しのとき、render.sh は publicDir（`out/.public/<ID>/`）を次の形に組む。再生機は publicDir からの道で読む。
+書き出しのとき、render.sh は書き出し用のフォルダ（`out/.public/<ID>/`）を次の形に組み、HyperFrames がその `index.html` を開いて1コマずつ撮る。再生機は、このフォルダからの道で読む。
 
 ```
+index.html             再生機のページ（kinds/sim3d/player/index.html に大きさ・fps・長さ・先頭のコマを埋めた物）
+player.js              再生機（kinds/sim3d/player/src/ を three ごと1つにまとめた物）
 episode/episode.json   作品の episode.json の hud を「kinds/sim3d/lib/hud-defaults.json ＋ 作品の上書き」にした物
 episode/scene.json・tracks.bin・hud.json   計算結果の写し
 fonts/                 shared/fonts の写し
@@ -47,7 +49,7 @@ models/                shared/models の写し（scene.json の models と parts
   - `"t"` がある区間：そのあいだずっと同じ変換
   - `"o"` がある区間：`tracks.bin` の `o + (f - from) * 10` 番目から10個が、そのコマの変換
 - 変換は10個の数：位置3、四元数4、拡大3。世界での値（親子関係は無い）
-- 部品の `shape` が `model` のときは、`material` の代わりに `src`（3D 素材の道。publicDir からの道、例 `models/kenney/food-kit/apple.glb`）を持つ。使う素材の一覧は scene.json の `models`
+- 部品の `shape` が `model` のときは、`material` の代わりに `src`（3D 素材の道。書き出し用のフォルダからの道、例 `models/kenney/food-kit/apple.glb`）を持つ。使う素材の一覧は scene.json の `models`
 - `clips` があれば、素材に入っている動き（歩く・座るなど）を再生する：`{ "from", "to", "clip": 動きの名前, "o", "fade" }`。コマ f の動きの中の秒は `tracks.bin[o + (f - from)]`。`fade` コマかけて直前の動きから切り替える。区間のあいだのコマは、直前の動きの最後の姿勢で止める
 - `opacity` があれば、該当コマで `tracks.bin[o + (f - from)]` の1個（0〜1）を素材の不透明度に掛ける。区間の外は 1
 
@@ -86,7 +88,7 @@ models/                shared/models の写し（scene.json の models と parts
 
 ## hud.json
 
-`frames[f]` が、そのコマの画面の文字。値が `null` の項目は描かない。`a` は不透明度（0〜1）。位置・大きさ・色は publicDir の `episode/episode.json` の `hud`（既定値は `kinds/sim3d/lib/hud-defaults.json`）にある。
+`frames[f]` が、そのコマの画面の文字。値が `null` の項目は描かない。`a` は不透明度（0〜1）。位置・大きさ・色は 書き出し用のフォルダの `episode/episode.json` の `hud`（既定値は `kinds/sim3d/lib/hud-defaults.json`）にある。
 
 ```jsonc
 {

@@ -26,7 +26,7 @@ const trs = (n) => {
 };
 const IDENT = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 
-// src は shared/ からの道（publicDir からの道と同じ）（例 "models/kenney/food-kit/sushi-egg.glb"）
+// src は shared/ からの道（書き出し用のフォルダからの道と同じ）（例 "models/kenney/food-kit/sushi-egg.glb"）
 // 返り値：{ min, max, size, clips: { 名前: 長さ（秒） } }。骨で動く人物の箱は、動かす前の姿勢での値
 export const glbInfo = (src) => {
   if (cache.has(src)) return cache.get(src);

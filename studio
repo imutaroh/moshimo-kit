@@ -41,7 +41,7 @@ const projectOf = (id) => {
   return { ...p, kindDir: kind.dir, out: join(ROOT, "out", id), mp4: join(ROOT, "out", id, `${id}.mp4`) };
 };
 
-// 書き出しを始める間隔を空ける。同じ瞬間に2つ始めると、Remotion が動かないまま止まることがあった
+// 書き出しを始める間隔を空ける。同じ瞬間に2つ始めると、書き出しの土台が動かないまま止まることがあった（土台が Remotion だったころ）
 // （2026-11-14 に2回。原因は確かめていない）。始めてから GAP 秒は、ほかの書き出しを待たせる。その後は並んで走る
 const GAP_MS = 8000, STARTING = join(ROOT, "out", ".starting");
 let holding = false;
@@ -74,7 +74,7 @@ const runKind = async (kindDir, script, id, rest, limitMin = 0) => {
       cwd: ROOT, stdio: "inherit", detached: true, // 自分の組にして、止めるときに子（Chrome など）ごと止める
       env: { ...process.env, STUDIO_ROOT: ROOT, STUDIO_KIND: kindDir, STUDIO_PROJECT: join(ROOT, "projects", id), STUDIO_OUT: join(ROOT, "out", id) },
     });
-    // 止めるときは、子と、その子孫（npm・Remotion・Chrome）を全部止める。親だけ止めると、書き出しが裏で走り続ける
+    // 止めるときは、子と、その子孫（npm・HyperFrames・Chrome）を全部止める。親だけ止めると、書き出しが裏で走り続ける
     const family = (roots) => {
       const rows = spawnSync("ps", ["-Ao", "pid=,ppid="], { encoding: "utf8" }).stdout.trim().split("\n").map((l) => l.trim().split(/\s+/).map(Number));
       const all = [...roots];
@@ -209,7 +209,7 @@ const commands = {
     sheet(p.mp4, info.frames, to);
     console.log(`${info.width}×${info.height}  ${info.fps}fps  ${info.frames}コマ  ${info.durationSec}秒  音${info.audio ? "あり" : "なし"}  ${info.pixFmt}  ${info.sizeMB}MB`);
     if (!info.audio) console.log("※ 音声トラックが無い。投稿先で弾かれることがある（作り方の render.sh は、音が無い動画にも無音のトラックを付ける決まり）");
-    if (info.pixFmt !== "yuv420p") console.log(`※ 色の形式が ${info.pixFmt}。決まりは yuv420p（Remotion には --pixel-format=yuv420p --color-space=bt709 を付ける）`);
+    if (info.pixFmt !== "yuv420p") console.log(`※ 色の形式が ${info.pixFmt}。決まりは yuv420p・bt709（kinds/README.md の render.sh の決まり）`);
     console.log(`${rel(to)}（0%・25%・50%・70%・95% のコマ。開いて目で見ること）`);
   },
   keep() {

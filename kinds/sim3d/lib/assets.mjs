@@ -1,5 +1,5 @@
 // 3D 素材（shared/models/kenney/ の Kenney の素材集。CC0）の道と、作品に依らない置き方。
-// 道は shared/ から（＝ publicDir から）の道。中身の一覧は `ls shared/models/kenney/<集>/`、大きさは glbInfo(道).size
+// 道は shared/ から（＝ 書き出し用のフォルダから）の道。中身の一覧は `ls shared/models/kenney/<集>/`、大きさは glbInfo(道).size
 import { model } from "./mvscene.mjs";
 export { glbInfo } from "./glb.mjs";
 
