@@ -51,15 +51,20 @@ build_public() {
     if (!(Number.isInteger(s) && Number.isInteger(n) && s >= 0 && n > 0 && s + n <= v.frameCount)) throw new Error(`コマの範囲が動画の外: ${s} から ${n} コマ（全部で ${v.frameCount} コマ）`);
     const vals = { WIDTH: v.width, HEIGHT: v.height, FPS: v.fps, DURATION: n / v.fps, START_FRAME: s };
     fs.writeFileSync(out, fs.readFileSync(tpl, "utf8").replace(/\{\{(\w+)\}\}/g, (_, k) => String(vals[k])));
-  ' "$KIND/player/index.html" "$baked/scene.json" "$pub/index.html" "$start" "$count"
+    console.log(n);
+  ' "$KIND/player/index.html" "$baked/scene.json" "$pub/index.html" "$start" "$count" >"$pub/.frames"
 }
 # 無音で書き出す。$1 = 書き出し用のフォルダ　$2 = 出力先　残りは hyperframes render に渡す
 #   利用状況の送信（テレメトリー）は、上の export で止めてある
 render_video() {
   local pub="$1" file="$2"; shift 2
   mkdir -p "$(dirname "$file")"
-  # 並列は 4（10コアの Mac で、自動 50秒・4並列 37秒・8並列 44秒だった。17秒の動画）。--workers を渡せば後ろの値が効く
-  npx --no-install hyperframes render "$pub" --output "$file" --format mp4 --crf 18 --workers 4 --quiet "$@"
+  # 並列の数：短い動画は 4、40秒（1200コマ）以上は自動に任せる。10コアの Mac で測った値（2026-11-16）：
+  #   17秒の見本は 自動 50秒・4並列 37秒・8並列 44秒。79秒の回転寿司は 自動 164秒・4並列 202秒
+  #   --workers を渡せば、後ろに付くその値が効く
+  local workers=4
+  [ "$(cat "$pub/.frames")" -lt 1200 ] || workers=auto
+  npx --no-install hyperframes render "$pub" --output "$file" --format mp4 --crf 18 --workers "$workers" --quiet "$@"
 }
 # 引数の中の --frames=a-b を「先頭のコマ コマ数」にする（無ければ「0 空」＝最後まで）
 frames_range() {
