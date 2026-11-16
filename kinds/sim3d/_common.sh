@@ -3,8 +3,9 @@
 #   $1 = 動画の ID。./studio から呼ばれると STUDIO_ROOT・STUDIO_KIND・STUDIO_PROJECT・STUDIO_OUT が入っている。
 #   直に呼んだとき（kinds/sim3d/render.sh <ID>）は、このファイルの場所から決める。
 set -euo pipefail
-# HyperFrames に利用状況を外へ送らせない（書き出しのたびに送る機能がある）
-export HYPERFRAMES_NO_TELEMETRY=1 DO_NOT_TRACK=1
+# HyperFrames に外と通信させない：利用状況の送信（書き出しのたびに送る機能がある）と、
+# 裏で走る更新の確認（npm）・スキルの版の確認（GitHub）を止める。どれも書き出しには要らない
+export HYPERFRAMES_NO_TELEMETRY=1 DO_NOT_TRACK=1 HYPERFRAMES_NO_UPDATE_CHECK=1 HYPERFRAMES_SKIP_SKILLS=1
 ID="${1:?使い方: $(basename "$0") <ID> [...]}"
 KIND="${STUDIO_KIND:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 ROOT="${STUDIO_ROOT:-$(cd "$KIND/../.." && pwd)}"

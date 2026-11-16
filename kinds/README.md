@@ -42,7 +42,7 @@ kinds/<作り方>/<スクリプト> <ID> [追加の引数...]
 
 - 依存（HyperFrames・three・esbuild など）は、リポジトリ直下の `package.json` に1つだけ。作り方の中に `package.json` や `node_modules` を作らない。書き出しは、リポジトリの直下で `npx --no-install hyperframes render <書き出し用のフォルダ> …` のように呼ぶ
 - 書き出し用のフォルダ（HyperFrames が開くページと、素材・計算結果の写し）は、書き出しのたびに `out/.public/<ID>/`（試し撮りは `out/.public/<ID>@<何か>/`）に組む。同時に2つ書き出しても混ざらないように、動画ごと・試し撮りごとに分ける
-- HyperFrames の利用状況の送信は止める（`HYPERFRAMES_NO_TELEMETRY=1`・`DO_NOT_TRACK=1`。`kinds/sim3d/_common.sh` を見る）
+- HyperFrames の外との通信（利用状況の送信・更新の確認・スキルの版の確認）は止める（`kinds/sim3d/_common.sh` の export を見る）
 - 複数の作り方で使う素材は `shared/`（フォント、3D 素材、キャラクター、効果音）。1つの作り方しか使わない物は、その作り方の中に置く
 - 作り直せる中間物（計算結果、読み上げの音声）は `projects/<ID>/` の中の、Git に入れないフォルダ（`baked/`・`voice/`）に置く
 - **絶対パスを書かない。** スクリプトも文書も、リポジトリの直下からの相対の道で書く（フォルダの名前や場所を変えても動くように）

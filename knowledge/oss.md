@@ -10,7 +10,7 @@
 
 | 名前 | 版 | ライセンス | 何に使っているか | 守ること |
 | --- | --- | --- | --- | --- |
-| HyperFrames（`hyperframes`、HeyGen） | 0.8.231 | Apache-2.0（npm の `license` 欄） | 再生機のページ（`kinds/sim3d/player/index.html`）を Chrome で開き、1コマずつ撮って mp4 にする土台。全部の書き出しで使う | 利用状況を外へ送る機能がある。`kinds/sim3d/_common.sh` で `HYPERFRAMES_NO_TELEMETRY=1`・`DO_NOT_TRACK=1` を付けて止めている（`npx hyperframes telemetry status` が「disabled」になるのを確かめた）。`feedback`・`publish`・`events`・`auth` のコマンドは使わない。版を上げるときは、出て2週間たった版にし、同じ台本で書き出して絵を比べる（版がほぼ毎日出ている） |
+| HyperFrames（`hyperframes`、HeyGen） | 0.8.231 | Apache-2.0（npm の `license` 欄） | 再生機のページ（`kinds/sim3d/player/index.html`）を Chrome で開き、1コマずつ撮って mp4 にする土台。全部の書き出しで使う | 利用状況を外へ送る機能がある。`kinds/sim3d/_common.sh` で `HYPERFRAMES_NO_TELEMETRY=1`・`DO_NOT_TRACK=1` を付けて止めている（`npx hyperframes telemetry status` が「disabled」になるのを確かめた）。裏で走る更新の確認（npm）とスキルの版の確認（GitHub。読むだけで入れはしない）も、`HYPERFRAMES_NO_UPDATE_CHECK=1`・`HYPERFRAMES_SKIP_SKILLS=1` で止めている。初めての書き出しで、撮影用の Chrome（chrome-headless-shell、展開して約250MB）を `~/.cache/hyperframes/` に落とす。`feedback`・`publish`・`events`・`auth` のコマンドは使わない。版を上げるときは、出て2週間たった版にし、同じ台本で書き出して絵を比べる（版がほぼ毎日出ている） |
 | esbuild | 0.28.2 | MIT | 再生機（`kinds/sim3d/player/src/`）を three ごと1つの `player.js` にまとめる | — |
 | Three.js（`three`） | 0.186.1 | MIT | 3D の描画（`sim3d`） | — |
 | TypeScript ほか型定義 | 5.9.3 ほか | — | 開発用（`devDependencies`） | — |
