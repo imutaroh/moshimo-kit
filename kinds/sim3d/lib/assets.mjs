@@ -15,5 +15,16 @@ export const K = 1.5;
 //   動きの名前：idle walk sprint jump fall crouch sit drive die pick-up emote-yes emote-no holding-right holding-left holding-both
 //               interact-right interact-left attack-melee-right attack-kick-right ほか。全部の名前と長さは glbInfo(chara("male-d")).clips
 export const person = (sc, id, look, k = K) => sc.add(id, [model(chara(look), { k, feet: true })]);
+
+// 大人の頭身の人物（shared/models/quaternius/ の Quaternius「Ultimate Modular Men / Women」。CC0）
+//   見た目：man-suit man-casual man-hoodie man-worker man-farmer man-beach
+//           woman-suit woman-dress woman-casual woman-worker woman-punk woman-adventurer
+//   動きの名前（Kenney と違い、頭が大文字）：Idle Idle_Neutral Walk Run Wave Interact HitRecieve HitRecieve_2 Death Roll
+//           Punch_Left Punch_Right Kick_Left Kick_Right ほか。座る動きは無い。全部は glbInfo(adult("man-suit")).clips
+export const adult = (n) => `models/quaternius/${n}.glb`;
+// 大人の人物の拡大率。KA で置くと立った背丈 約1.1m になり、三頭身の人物（K）と同じ舞台・カメラにそのまま入る。
+//   大人に合わせて舞台を作るときは k を上げ、家具とカメラもその背丈に合わせる（もとの背丈は 約1.85m）
+export const KA = 0.6;
+export const adultPerson = (sc, id, look, k = KA) => sc.add(id, [model(adult(look), { k, feet: true })]);
 // 小物1つを部品にする。it = { src, h|w|d（どれか1つの長さ m）, pos（底の中心）, quat }
 export const itemPart = (it, pos = it.pos, quat = it.quat) => model(it.src, { ...(it.h ? { h: it.h } : it.w ? { w: it.w } : { d: it.d }), pos, quat });
