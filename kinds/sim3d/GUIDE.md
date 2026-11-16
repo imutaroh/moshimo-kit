@@ -1,7 +1,7 @@
 # sim3d：3D シミュレーション風の動画の作り方
 
 「もし〇〇が2秒ごとに2倍になったら？」のように、数字が増えていく様子を、小さな 3D の舞台と三頭身の人物で見せる縦動画（1080×1920・30fps）。
-絵は全部コードで計算する。台本（`episode.json`）を読んで、幕のスクリプト（`acts/*.mjs`）が全コマの物体・カメラ・画面の文字を計算し、Remotion＋Three.js の再生機がそれを描く。音も計算で作る。
+絵は全部コードで計算する。台本（`episode.json`）を読んで、幕のスクリプト（`acts/*.mjs`）が全コマの物体・カメラ・画面の文字を計算し、Three.js の再生機がそれを描き、HyperFrames が1コマずつ撮って動画にする。音も計算で作る。
 
 ## 作る前に読む物
 
@@ -24,7 +24,7 @@ projects/<ID>/acts/*.mjs     幕：物体を置き、動かし、カットを決
 projects/<ID>/sound.mjs      音の台本
         ↓ kinds/sim3d/lib/bake.mjs と sound.mjs（render.sh が呼ぶ）
 projects/<ID>/baked/         scene.json・tracks.bin・hud.json・audio.wav（作り直せるので Git に入れない）
-        ↓ kinds/sim3d/player/src（Remotion＋Three.js。作品ごとのコードは持たない）
+        ↓ kinds/sim3d/player（index.html と src/。Three.js で描き、HyperFrames が撮る。作品ごとのコードは持たない）
 out/<ID>/<ID>.mp4
 ```
 
@@ -134,7 +134,7 @@ out/<ID>/<ID>.mp4
 - `out/<ID>/preview/<幕>_<開始>-<終了>.mp4`（音なし）と、コマを横6列に並べた `.jpg` が出る。**jpg を開いて、自分の目で見る。** 書き出せたことと、絵が合っていることは別
 - 一覧は、構図を見るときは 0.5秒刻みで6秒ぶんまで、動きを見るときは 0.1秒刻みで2秒ぶんまで（それより長いと小さくて見えない）
 - 原寸で見たいコマは `ffmpeg -ss <秒> -i <mp4> -frames:v 1 out/<ID>/preview/<名前>.jpg` で抜く
-- 計算結果は `out/<ID>/preview/baked-<幕>/`、publicDir は `out/.public/<ID>@<幕>/` に幕ごとに分かれる。ほかの幕の試し撮りと同時に走らせてよいが、**同じ幕の試し撮りを同時に2つ走らせない**（同じ場所に書く）
+- 計算結果は `out/<ID>/preview/baked-<幕>/`、書き出し用のフォルダは `out/.public/<ID>@<幕>/` に幕ごとに分かれる。ほかの幕の試し撮りと同時に走らせてよいが、**同じ幕の試し撮りを同時に2つ走らせない**（同じ場所に書く）
 - 名札・吹き出しの位置は、計算結果の `hud.json`（本番は `projects/<ID>/baked/hud.json`、試し撮りは `out/<ID>/preview/baked-<幕>/hud.json`）で数でも確かめられる。形は `{ fps, frameCount, frames: [ { f, tags: [{ text, x, y, a }], bubbles: [...] , ... } ] }` で、名札は頂上ではなく `frames[コマ].tags` の中にある。名札を出したい秒のうち、名札が出ていないコマを数える例：
 
 ```sh
@@ -162,8 +162,8 @@ node -e 'const h = require("./out/<ID>/preview/baked-<幕>/hud.json"), fps = h.f
 ```
 
 - 計算結果が無いか、台本・作品のコード・lib のどれかより古ければ、先に計算し直す（音も）
-- 追加の引数は Remotion に渡す（例 `--frames=600-659`）。`--frames` を渡すと、出力は `out/<ID>/<ID>_part.mp4` になり（完成品を上書きしない）、音はそのコマの位置から重なる。名前は環境変数 `SIM3D_OUT_NAME` で変えられる（直に `kinds/sim3d/render.sh <ID> --frames=…` を呼ぶとき用。`./studio render` は完成品の `<ID>.mp4` があることを確かめるので、部分の書き出しは直に呼ぶ）
-- 79秒の回転寿司で、書き出しは約4分（2026-11-14、ほかの書き出しと同時に走らせて 236 秒）。17秒の見本は約1分
+- `--frames=a-b`（例 `--frames=600-659`）を渡すと、そのコマの範囲だけを書き出す。それ以外の追加の引数（例 `--workers 2`）は `hyperframes render` に渡す。`--frames` を渡すと、出力は `out/<ID>/<ID>_part.mp4` になり（完成品を上書きしない）、音はそのコマの位置から重なる。名前は環境変数 `SIM3D_OUT_NAME` で変えられる（直に `kinds/sim3d/render.sh <ID> --frames=…` を呼ぶとき用。`./studio render` は完成品の `<ID>.mp4` があることを確かめるので、部分の書き出しは直に呼ぶ）
+- 書き出しの時間（2026-11-16、10コアの Mac、HyperFrames）：17秒の見本は約40秒、79秒の回転寿司は約3分（164秒）。初めての書き出しだけ、撮影用の Chrome のダウンロードが先に入る
 
 ### 9. check
 

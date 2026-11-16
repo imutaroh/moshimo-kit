@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# 完成品を書き出す。./studio render <ID> [remotion render の引数...] から呼ばれる → out/<ID>/<ID>.mp4（音つき）
+# 完成品を書き出す。./studio render <ID> [--frames=a-b] [hyperframes render の引数...] から呼ばれる → out/<ID>/<ID>.mp4（音つき）
 #   1. 計算結果（projects/<ID>/baked/）が無いか、台本・作品のコード・lib より古ければ、計算し直す（音も）
-#   2. publicDir を out/.public/<ID>/ に組む
-#   3. 無音で書き出し（out/<ID>/<名前>.silent.mp4）、音を重ねて out/<ID>/<名前>.mp4 にする
+#   2. 書き出し用のフォルダを out/.public/<ID>/ に組む（再生機のページ・素材・計算結果）
+#   3. HyperFrames で無音で書き出し（out/<ID>/<名前>.silent.mp4）、音を重ねて out/<ID>/<名前>.mp4 にする
 #      sound.mjs が無い動画は、無音の音声トラック（aac・48kHz・ステレオ）を付ける
 #
-# 追加の引数（例 --frames=0-59）は Remotion に渡す。音は、そのコマの位置から重ねる。
+# --frames=a-b（例 --frames=0-59）を付けると、そのコマの範囲だけを書き出す。音は、そのコマの位置から重ねる。
+# それ以外の追加の引数（例 --workers 2）は hyperframes render に渡す。
 # 出力の名前（<名前>）は SIM3D_OUT_NAME で変えられる。既定は <ID>。
 # ただし --frames があって SIM3D_OUT_NAME が無いときは <ID>_part にする（完成品を一部分だけの物で上書きしないように）。
 source "$(dirname "$0")/_common.sh" "$@"
@@ -15,9 +16,12 @@ stale && { echo "計算し直す（台本か作品のコードか lib が新し�
 NAME="${SIM3D_OUT_NAME:-$ID}"
 for a in "$@"; do case "$a" in --frames=*) [ -n "${SIM3D_OUT_NAME:-}" ] || NAME="${ID}_part";; esac; done
 PUB="$ROOT/out/.public/$ID"
-build_public "$PUB" "$PROJ/baked"
+read -r START COUNT <<<"$(frames_range "$@")"
+build_public "$PUB" "$PROJ/baked" "$START" "${COUNT:-}"
 SILENT="$OUT/$NAME.silent.mp4" FINAL="$OUT/$NAME.mp4"
-render_video "$PUB" "$SILENT" "$@"
+EXTRA=()
+while IFS= read -r a; do [ -n "$a" ] && EXTRA+=("$a"); done <<<"$(other_args "$@")"
+render_video "$PUB" "$SILENT" ${EXTRA[@]+"${EXTRA[@]}"}
 
 AUDIO="$PROJ/baked/audio.wav"
 if [ -f "$AUDIO" ]; then

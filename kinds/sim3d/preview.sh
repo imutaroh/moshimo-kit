@@ -5,7 +5,7 @@
 #     開始・終了 物語の秒（物語0秒＝冒頭の終わり。冒頭は負の数）。省くと、その幕の beats の最初から最後まで
 #     刻み秒   コマ一覧の1コマの間隔（既定 0.5）
 #   → out/<ID>/preview/<幕>_<開始>-<終了>.mp4（音なし）と、コマを横6列に並べた .jpg
-# 計算結果は out/<ID>/preview/baked-<幕>/、publicDir は out/.public/<ID>@<幕>/ に、幕ごとに分けて置く
+# 計算結果は out/<ID>/preview/baked-<幕>/、書き出し用のフォルダは out/.public/<ID>@<幕>/ に、幕ごとに分けて置く
 # （本番の計算結果を上書きしない。ほかの幕の試し撮りと同時に走っても混ざらない。同じ幕を同時に2つは走らせない）
 usage() { echo "使い方: ./studio preview <ID> <幕> [開始秒 終了秒] [刻み秒]（秒は数。例: ./studio preview $1 <幕> -2 4 0.5。冒頭は負の数）" >&2; exit 1; }
 source "$(dirname "$0")/_common.sh" "$@"
@@ -35,8 +35,8 @@ start=$(date +%s)
 export SIM3D_ONLY="$act" SIM3D_BAKED="$dir/baked-$act"
 node "$KIND/lib/bake.mjs" "$PROJ"
 PUB="$ROOT/out/.public/$ID@$act"
-build_public "$PUB" "$SIM3D_BAKED"
-render_video "$PUB" "$dir/$name.mp4" "--frames=$from-$to" --log=error >/dev/null
+build_public "$PUB" "$SIM3D_BAKED" "$from" "$(( to - from + 1 ))"
+render_video "$PUB" "$dir/$name.mp4" >/dev/null
 # コマ一覧：step 秒ごとに1コマ、横6列。左上から右へ進む
 every="$(node -p "Math.max(1, Math.round($step * $FPS))")"
 rows="$(node -p "Math.ceil(Math.ceil(($to - $from + 1) / $every) / 6)")"

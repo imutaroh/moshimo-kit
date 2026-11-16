@@ -3,7 +3,6 @@
     "target": "ES2018",
     "module": "Preserve",
     "moduleResolution": "Bundler",
-    "jsx": "react-jsx",
     "strict": true,
     "noEmit": true,
     "lib": ["es2020", "dom"],
@@ -13,6 +12,6 @@
     "noUnusedLocals": true,
     "resolveJsonModule": true
   },
-  "exclude": ["remotion.config.ts", "node_modules", "out"],
+  "exclude": ["node_modules", "out"],
   "include": ["kinds", "projects"]
 }

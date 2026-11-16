@@ -1,8 +1,8 @@
 // 画面の文字の見た目（位置・大きさ・色）。既定値は hud-defaults.json。
 // 作品の episode.json の hud には、変えたい所だけを書く（深くたどって上書きする）。
 //   node kinds/sim3d/lib/hud.mjs <作品の episode.json> <出力先>
-// で、hud を「既定値＋作品の上書き」にした episode.json を書く（render.sh が publicDir に置く。再生機はこれを読む）。
-// fontSans / fontMono の「assets/fonts/…」は、publicDir の fonts/ を指す決まり（再生機の Hud.tsx が assets/ を外す）。
+// で、hud を「既定値＋作品の上書き」にした episode.json を書く（render.sh が書き出し用のフォルダに置く。再生機はこれを読む）。
+// fontSans / fontMono の「assets/fonts/…」は、書き出し用のフォルダの fonts/ を指す決まり（再生機の Hud.ts が assets/ を外す）。
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";

@@ -1,11 +1,14 @@
 // 場面データ（mvscene/1、kinds/sim3d/docs/FORMAT.md）を読み込む。
-// kinds/sim3d/render.sh が作品のファイルを publicDir の episode/ に置くので、staticFile で引く。
-import { staticFile } from "remotion";
+// kinds/sim3d/render.sh が、書き出し用のフォルダ（out/.public/<ID>/）の episode/ に作品のファイルを置く。
+// 再生機のページ（index.html）はそのフォルダの直下にあるので、ページからの相対の道で引く。
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
+
+// 書き出し用のフォルダの中の道（fonts/…・models/…・episode/…）を、ページから引ける URL にする
+export const assetUrl = (path: string) => `./${path}`;
 
 export type Transform = number[]; // [px,py,pz, qx,qy,qz,qw, sx,sy,sz]
 export type Material = { id: string; color: string; emissive: number; opacity: number };
-// shape が "model" の部品は、src（publicDir からの道）の 3D 素材（.glb）を置く。material は無い
+// shape が "model" の部品は、src（書き出し用のフォルダからの道）の 3D 素材（.glb）を置く。material は無い
 export type Part = { shape: "box" | "cyl" | "cone" | "sphere" | "torus" | "model"; material?: string; src?: string; t: Transform };
 export type Segment = { from: number; to: number; t?: Transform; o?: number };
 export type OpacityTrack = { from: number; to: number; o: number };
@@ -95,7 +98,7 @@ export type EpisodeJson = { id: string; format?: string; video: Omit<VideoSpec, 
 export type Loaded = { episode: EpisodeJson; scene: SceneJson; tracks: Float32Array; hud: { frames: HudFrame[] }; models: Map<string, GLTF> };
 
 const getJson = async <T,>(path: string): Promise<T> => {
-  const res = await fetch(staticFile(path));
+  const res = await fetch(assetUrl(path));
   if (!res.ok) throw new Error(`読めない: ${path} (${res.status})`);
   return (await res.json()) as T;
 };
@@ -109,21 +112,19 @@ export const loadEpisode = (): Promise<Loaded> => {
         getJson<EpisodeJson>("episode/episode.json"),
         getJson<SceneJson>("episode/scene.json"),
         getJson<{ frames: HudFrame[] }>("episode/hud.json"),
-        fetch(staticFile("episode/tracks.bin")).then((r) => {
+        fetch(assetUrl("episode/tracks.bin")).then((r) => {
           if (!r.ok) throw new Error(`読めない: tracks.bin (${r.status})`);
           return r.arrayBuffer();
         }),
       ]);
       if (scene.format !== "mvscene/1") throw new Error(`形式が違う: ${scene.format}`);
-      // 3D 素材。kinds/sim3d/render.sh が shared/models を publicDir の models/ に置く
+      // 3D 素材。kinds/sim3d/render.sh が shared/models を書き出し用のフォルダの models/ に置く
       const loader = new GLTFLoader();
       const models = new Map<string, GLTF>();
-      await Promise.all((scene.models ?? []).map(async (src) => models.set(src, await loader.loadAsync(staticFile(src)))));
+      await Promise.all((scene.models ?? []).map(async (src) => models.set(src, await loader.loadAsync(assetUrl(src)))));
       return { episode, scene, hud, tracks: new Float32Array(buf), models };
     })();
   }
   return cache;
 };
 
-// scene.json だけ（コンポジションの大きさ・長さを決めるため）
-export const loadVideoSpec = () => getJson<SceneJson>("episode/scene.json").then((s) => s.video);

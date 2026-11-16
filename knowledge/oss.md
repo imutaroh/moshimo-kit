@@ -2,7 +2,7 @@
 
 物を入れる前に読む。新しい物を入れたら、ここに書く。
 
-- **最終更新**：2026-11-14
+- **最終更新**：2026-11-16（動画の土台を Remotion から HyperFrames に替えた）
 - **出どころ**：版とライセンスは、このリポジトリの `package.json`・`node_modules/<名前>/package.json` の `license` 欄・`shared/` の中のライセンスのファイルで確かめた。候補と素材の条件は、2026-11-14 の裏取りの調査（GitHub・npm を読んだ物と、公式ページを読んだ物）から写した
 - **確かさの書き分け**：「公式ページで確かめた」「二次情報（公式以外の記事など）」「未確認」を分ける。未確認の物を、確かめたように書かない
 
@@ -10,29 +10,22 @@
 
 | 名前 | 版 | ライセンス | 何に使っているか | 守ること |
 | --- | --- | --- | --- | --- |
-| Remotion（`remotion`・`@remotion/cli`） | 4.0.532 | 独自（Remotion License。npm の表示は「SEE LICENSE IN LICENSE.md」） | 動画を React で書いて書き出す土台。全部の作り方で使う | 無料の対象かどうか（下の「Remotion のライセンス」）。版は Remotion の関連パッケージで揃える |
-| `@remotion/three` | 4.0.532 | MIT | Remotion の中で Three.js を描く | 同上（版を揃える） |
-| `@remotion/media` | 4.0.532 | `license` 欄が空（未確認） | 依存に入っている | 解説動画のリポジトリでは「入っているが使っていない」と記録されていた。使うなら、ライセンスを確かめてから |
+| HyperFrames（`hyperframes`、HeyGen） | 0.8.231 | Apache-2.0（npm の `license` 欄） | 再生機のページ（`kinds/sim3d/player/index.html`）を Chrome で開き、1コマずつ撮って mp4 にする土台。全部の書き出しで使う | 利用状況を外へ送る機能がある。`kinds/sim3d/_common.sh` で `HYPERFRAMES_NO_TELEMETRY=1`・`DO_NOT_TRACK=1` を付けて止めている（`npx hyperframes telemetry status` が「disabled」になるのを確かめた）。裏で走る更新の確認（npm）とスキルの版の確認（GitHub。読むだけで入れはしない）も、`HYPERFRAMES_NO_UPDATE_CHECK=1`・`HYPERFRAMES_SKIP_SKILLS=1` で止めている。初めての書き出しで、撮影用の Chrome（chrome-headless-shell、展開して約250MB）を `~/.cache/hyperframes/` に落とす。`feedback`・`publish`・`events`・`auth` のコマンドは使わない。版を上げるときは、出て2週間たった版にし、同じ台本で書き出して絵を比べる（版がほぼ毎日出ている） |
+| esbuild | 0.28.2 | MIT | 再生機（`kinds/sim3d/player/src/`）を three ごと1つの `player.js` にまとめる | — |
 | Three.js（`three`） | 0.186.1 | MIT | 3D の描画（`sim3d`） | — |
-| `@react-three/fiber` | 9.8.2 | MIT | React で Three.js を書く | — |
-| React・React DOM | 19.2.3 | MIT | 画面を部品で組む | — |
 | TypeScript ほか型定義 | 5.9.3 ほか | — | 開発用（`devDependencies`） | — |
 | IBM Plex Sans JP / IBM Plex Mono | `shared/fonts/` のファイル | SIL OFL 1.1（`shared/fonts/OFL-*.txt`） | 画面の文字 | フォントのファイル単体で売らない。ライセンスのファイルを一緒に置く |
 | Quaternius の人物 | Ultimate Modular Men（2022-02）・Ultimate Modular Women（2022-04）から12体。glTF を glb にまとめ、man-suit の銃の部品を外した | CC0（`shared/models/quaternius/License-*.txt`） | `sim3d` の大人の人物 | 表記は不要。作者の新しい素材には別のライセンス（QAL：素材の再配布は禁止）の物があるので、足すときは1つずつ確かめる |
 | Kenney の 3D 素材 5集 | Food Kit 2.0・Furniture Kit 2.0・Mini Characters 2.0・Car Kit 3.1・City Kit Commercial 2.1 | CC0（各集の `License.txt`） | `sim3d` の絵（`shared/models/kenney/`） | 表記は不要（作者への表記は任意と `License.txt` にある）。ライセンスのファイルを消さない |
-| ffmpeg | 未確認 | 未確認 | 音を重ねる。解説動画では Remotion に同梱の物（`npx remotion ffmpeg`）を使っていた | — |
+| ffmpeg | 未確認 | 未確認 | 音を重ねる。HyperFrames も mp4 にするのに使う（`brew install ffmpeg`） | — |
 
 
-### Remotion のライセンス
+### 動画の土台を Remotion から HyperFrames に替えた（2026-11-16）
 
-公式の LICENSE.md と FAQ を読んだ結果（2026-11-14）。
-
-- 無料の対象：個人、3人までの営利組織、非営利、評価の目的
-- 人数は会社全体で数える。3人以下は無料、4人以上は有料（Creators は1席 月25ドル）
-- 外のフリーランスやスタジオに作らせると、相手の人数を自分の側に足して数える。MP4 を納品するだけの代理店は、依頼主の人数を数えない
-- 禁止：Remotion のコードを複製・改変して、派生物を売る・貸す・ライセンスすること
-- LICENSE の冒頭に「Remotion 5.0 でライセンスが少し変わる」とある。5.0 では、Automators の顧客にサーバー側の利用状況の送信が必須になる（無料と Creators は任意）
-- 個人の Mac で作る用途は、無料の対象に入る。会社の仕事で使うなら、会社の人数で数え直す
+- **なぜ**：Remotion は、4人以上の会社の仕事で使うと有料のライセンス（Creators は1席 月25ドル、2026-11-14 に公式の LICENSE.md で確かめた）が要る。会社のアカウントで出す動画に使えるよう、Apache-2.0 の HyperFrames に替えた
+- **替えたのは描く所だけ**：台本・計算（`kinds/sim3d/lib/`）・場面データの形（`docs/FORMAT.md`）・3D 素材・音はそのまま。再生機を React（Remotion）から、ふつうの HTML と Three.js に書き直した
+- **確かめたこと**：同じ台本を両方で書き出し、同じ秒のコマを比べた。リンゴの見本・回転寿司（79秒、光のにじみなどの後処理つき）で、PSNR（2枚の絵の近さ）は 36〜40 dB で、目で見て区別がつかない。色の形式（yuv420p・bt709・tv）も同じ
+- **しくみ**：HyperFrames はコマを撮るたびに `hf-seek`（その時刻）を知らせてくる。再生機はそれを受けて、そのコマの 3D と画面の文字を描く。読み込みは `window.__hf.buildReady` で待たせ、読めなかったときは `window.__hfStartupError` に書いて書き出しを失敗させる（黒い動画を作らない）
 
 ## 5. 入れる前に確かめること
 

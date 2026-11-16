@@ -15,7 +15,7 @@
 
 | 物 | 中身 |
 | --- | --- |
-| 作り方 | `kinds/sim3d/`：台本から全コマを計算し、Remotion と Three.js で描く |
+| 作り方 | `kinds/sim3d/`：台本から全コマを計算し、Three.js で描いて、HyperFrames で1コマずつ撮って動画にする |
 | 見本 | `projects/sim3d-sample/`（リンゴ・17秒）、`projects/kaiten-sushi/`（回転寿司・79秒） |
 | 3D 素材 | `shared/models/kenney/`：Kenney の5集（人・車・食べ物・家具・店とビル、約470個） |
 | 大人の人物 | `shared/models/quaternius/`：Quaternius の12体（スーツ・私服・作業着など。歩く・手をふる・倒れるなどの動きつき） |
@@ -27,9 +27,9 @@
 
 - Mac
 - Claude Code が使える Claude のアカウント（有料プラン、または会社のアカウント）
-- Node.js と ffmpeg（無ければ Claude が入れ方を案内します）
+- Node.js（22 以上）と ffmpeg（無ければ Claude が入れ方を案内します）
 
 ## ライセンス
 
-- 動画の土台の [Remotion](https://www.remotion.dev/license) は、個人・3人までの会社・評価の目的なら無料です。4人以上の会社の仕事で使うときは、会社向けのライセンスが要ります（詳しくは `knowledge/oss.md`）
+- 動画の土台の [HyperFrames](https://github.com/heygen-com/hyperframes) は Apache-2.0 です。会社の仕事でも無料で使えます（詳しくは `knowledge/oss.md`）
 - 3D 素材は [Kenney](https://kenney.nl/)（CC0）と [Quaternius](https://quaternius.com/) の「Ultimate Modular Men / Women」（CC0）、フォントは IBM Plex（SIL OFL 1.1）。ライセンスのファイルは `shared/` の中にあります

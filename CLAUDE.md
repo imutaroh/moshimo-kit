@@ -17,13 +17,14 @@
 
 順に確かめ、無い物だけを入れる。入れる前に、何を・なぜ入れるかを一言伝えてから進める。
 
-1. `node -v`（無ければ Homebrew で `brew install node`）
+1. `node -v`（無ければ Homebrew で `brew install node`。22 より古ければ `brew upgrade node`。動画の土台の HyperFrames が 22 以上を要る）
    - Homebrew も無いとき：Homebrew の入れ方はパスワードの入力が要るので、Claude からは走らせられない。公式（https://brew.sh）の 1 行を示し、使う人に「⌘+スペースで『ターミナル』と打って開き、この 1 行を貼って Enter」と頼む。パスワードは Mac のログインパスワードで、打っても画面に何も出ないのが正常、と添える。終わったら知らせてもらう
    - 入れた直後は `brew` が見つからないことがある。そのときは `/opt/homebrew/bin/brew`（Intel の Mac は `/usr/local/bin/brew`）で呼ぶ
    - 詰まったら、無理に進めず「いむたさんに声をかけてください」と伝える
 2. `ffmpeg -version`（無ければ `brew install ffmpeg`）
 3. `node_modules/` が無ければ `npm ci`（あるなら打たない）
 4. 動作確認：`./studio render sim3d-sample` を走らせ、出来た `out/sim3d-sample/sim3d-sample.mp4` を開いて見せる。「準備ができた」と伝える
+   - 初めての書き出しでは、HyperFrames が撮影用の Chrome を1回だけダウンロードする（`~/.cache/hyperframes/`）。数分かかることがあると先に伝える
 
 ## 動画を作ってほしいと言われたら
 
@@ -50,7 +51,7 @@
   2. 候補を2〜3個、名前・出どころの URL・ライセンス・大きさで見せ、使う人の OK を取る
   3. OK が出たら、glb（または gltf）を `shared/models/<出どころ>/` に置き、出どころの URL とライセンスを書いた `License.txt` を同じ所に置く。`knowledge/oss.md` の表に1行足す
   4. サイトの規約が自動取得を禁止している所（Poly Haven など）は、Claude が自動で取りに行かず、ダウンロードのページの URL を渡して、使う人に落としてもらう
-- **公開の前に、Remotion のライセンスを確かめる。** このフォルダの土台の Remotion は、個人・3人までの会社・評価の目的なら無料。4人以上の会社の仕事（会社のアカウントで出す動画など）で使うときは有料のライセンスが要る（`knowledge/oss.md`）。会社の動画として出す前に、使う人に「出す前に、ライセンスを会社で確かめてね」と伝える
+- **動画の土台は HyperFrames（Apache-2.0）。** 会社の仕事でも無料で使える。書き出しは `./studio render` と `./studio preview` だけで行い、`npx hyperframes` を直に打たない。HyperFrames の `feedback`・`publish`・`events`・`auth`・`telemetry enable` は使わない（外へ送る機能。書き出しのスクリプトで利用状況の送信を止めている）。`hyperframes init` もしない（このフォルダの決まりと違う雛形や手引きを置く）
 - 削除は `rm` ではなく `trash`
 - 絶対パスを書かない
 
