@@ -1,0 +1,17 @@
+node_modules/
+.DS_Store
+.env
+.env.*
+__pycache__/
+
+# 書き出し中の物・試し撮り・書き出し用に組んだ publicDir（消しても作り直せる）
+out/
+
+# 動画の実体は Git に入れない（出来上がりは library/ に置き、Git が追うのは説明と縮小画像だけ）
+*.mp4
+*.mov
+*.avi
+
+# 台本から作り直せる中間物（計算結果、読み上げの音声）
+projects/*/baked/
+projects/*/voice/

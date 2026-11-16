@@ -1,0 +1,128 @@
+{
+  "note": "位置は 1080x1920 の px。y は文字の箱（行の高さ1）の上端。文言は baked/hud.json のコマごとの値を描く",
+  "fontSans": "assets/fonts/IBMPlexSansJP-Bold.ttf",
+  "fontMono": "assets/fonts/IBMPlexMono-Bold.ttf",
+  "text": "#FFFFFF",
+  "ink": "#111418",
+  "panel": "rgba(17,20,24,0.82)",
+  "accent": "#FFD23F",
+  "shadow": {
+    "blurPx": 14,
+    "offsetY": 2,
+    "color": "rgba(0,0,0,0.6)",
+    "note": "白い文字すべてに付ける影。明るい背景でも読めるように"
+  },
+  "topShade": {
+    "height": 780,
+    "color": "rgba(8,10,14,0.55)",
+    "note": "画面上端から height px まで、color から透明へ変わる縦のグラデーション。main か clock か title を描くコマだけ描く"
+  },
+  "title": {
+    "centerX": 540,
+    "y": 470,
+    "fontPx": 60,
+    "lineHeight": 1.42,
+    "sub": {
+      "fontPx": 26,
+      "gap": 30
+    }
+  },
+  "clock": {
+    "centerX": 540,
+    "y": 236,
+    "labelPx": 30,
+    "textPx": 92,
+    "gap": 14,
+    "font": "mono"
+  },
+  "main": {
+    "x": 60,
+    "tag": {
+      "text": "シミュレーション",
+      "y": 212,
+      "fontPx": 26,
+      "paddingX": 14,
+      "paddingY": 6,
+      "radius": 8
+    },
+    "count": {
+      "y": 270,
+      "fontPx": 124,
+      "font": "mono",
+      "unitPx": 46,
+      "unitGap": 10
+    },
+    "label": {
+      "y": 418,
+      "fontPx": 32
+    },
+    "value": {
+      "y": 458,
+      "fontPx": 82,
+      "unitPx": 44,
+      "unitGap": 12,
+      "note": "数字は等幅、日本語は Sans"
+    },
+    "badge": {
+      "rightX": 1020,
+      "y": 286,
+      "fontPx": 58,
+      "paddingX": 22,
+      "paddingY": 10,
+      "radius": 14,
+      "font": "mono",
+      "note": "accent 色の角丸に ink 色の文字。中心を基準に badgeScale 倍する"
+    }
+  },
+  "pill": {
+    "x": 60,
+    "y": 572,
+    "fontPx": 34,
+    "paddingX": 24,
+    "paddingY": 11,
+    "radius": 999,
+    "note": "panel 色の札に白文字"
+  },
+  "caption": {
+    "centerX": 540,
+    "centerY": 1300,
+    "fontPx": 58,
+    "lineHeight": 1.38,
+    "paddingX": 38,
+    "paddingY": 22,
+    "radius": 22,
+    "note": "panel 色の角丸パネル1つに全行を入れ、中央寄せ"
+  },
+  "tag": {
+    "fontPx": 30,
+    "paddingX": 18,
+    "paddingY": 8,
+    "radius": 12,
+    "stemPx": 28,
+    "note": "名札。panel 色に白文字。x,y は札の下にのびる細い線の先（指している点）。札は線の上に乗る"
+  },
+  "bubble": {
+    "fontPx": 38,
+    "paddingX": 26,
+    "paddingY": 16,
+    "radius": 24,
+    "stemPx": 20,
+    "note": "台詞。白い角丸に ink 色の文字。x,y は吹き出しの下の先"
+  },
+  "card": {
+    "centerX": 540,
+    "centerY": 820,
+    "fontPx": 68,
+    "lineHeight": 1.45,
+    "smallPx": 27,
+    "smallGap": 64,
+    "smallLineHeight": 1.75,
+    "smallColor": "rgba(255,255,255,0.72)"
+  },
+  "noteText": {
+    "centerX": 540,
+    "y": 1470,
+    "fontPx": 25,
+    "color": "rgba(255,255,255,0.85)"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "id": "__ID__",
+  "title": "__TITLE__",
+  "format": "mvscene/1",
+  "note": "雛形の見本：机の上のリンゴが、2秒ごとに2倍に増える。beats を書き換え、acts/main.mjs の絵を beats に合わせて作り直す。秒を変えたら video.durationSec を introSec＋storySec＋endSec にし、endCard の文言も合わせる（直す所の一覧は kinds/sim3d/GUIDE.md の「秒を変えたときに直す所」）。画面の文字の見た目は kinds/sim3d/lib/hud-defaults.json の既定値（変えたい所だけ hud に書く）",
+  "video": { "width": 1080, "height": 1920, "fps": 30, "durationSec": 17 },
+  "story": { "introSec": 2, "storySec": 12, "endSec": 3, "v0": 1, "doubleEverySec": 2 },
+  "sources": ["3D 素材：Kenney（www.kenney.nl）の Food Kit・Furniture Kit・Mini Characters。CC0"],
+  "cast": { "me": { "look": "female-a", "name": "わたし" } },
+  "acts": { "main": { "note": "冒頭（動画の0〜2秒）と、物語の0〜12秒。幕が1つだけの短い動画" } },
+  "beats": [
+    { "from": 0, "to": 2, "act": "main", "event": "机の上にリンゴが1個。わたしが横で見ている", "caption": ["机の上に、", "リンゴが1個"] },
+    { "from": 2, "to": 4, "act": "main", "event": "ポンと2個になる。正面から", "caption": ["2秒ごとに、", "2倍に増える"] },
+    { "from": 4, "to": 6, "act": "main", "event": "4個。机の高さから大写し", "caption": ["4個。", "まだ、かわいい"] },
+    { "from": 6, "to": 8, "act": "main", "event": "8個。わたしが首をふる", "caption": ["8個。", "ちょっと多い"] },
+    { "from": 8, "to": 10, "act": "main", "event": "16個。真上から、机が埋まる", "caption": ["16個で、", "机がいっぱい"] },
+    { "from": 10, "to": 12, "act": "main", "event": "32個。白く光り、上から降ってきたリンゴが机からあふれて転がる。わたしは倒れる", "caption": ["32個。", "机からあふれた"] }
+  ],
+  "endCard": { "lines": ["リンゴは、", "12秒で32個になった"], "small": ["「2秒ごとに2倍」で計算", "つぎの「もしも」は、何にする？"] }
+}

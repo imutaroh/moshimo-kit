@@ -1,0 +1,236 @@
+#!/usr/bin/env node
+// 動画づくりの入口。どの作り方（kinds/）の動画も、ここから作る。
+//
+//   ./studio kinds                        作り方の一覧
+//   ./studio new <作り方> <ID> ["題名"]     新しい動画を始める → projects/<ID>/
+//   ./studio list                         作っている動画の一覧
+//   ./studio preview <ID> [...]           試し撮り（引数は作り方ごと。kinds/<作り方>/GUIDE.md を見る）
+//   ./studio render <ID> [...]            完成品を書き出す → out/<ID>/<ID>.mp4（音つき）
+//   ./studio check <ID>                   大きさ・fps・長さ・音の有無を調べ、5コマを1枚に並べる
+//   ./studio keep <ID> [--note "メモ"]     書き出した動画を library/ に収める
+//                                        （前に別の場所で書き出した物は --from <mp4> --date <作った日>）
+//   ./studio index                        library/INDEX.md を作り直す
+//
+// 作り方ごとの実体は kinds/<作り方>/ の new.sh・render.sh・preview.sh。決まりは kinds/README.md。
+import { spawn, spawnSync } from "node:child_process";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmdirSync, statSync, writeFileSync } from "node:fs";
+import { dirname, join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const ROOT = dirname(fileURLToPath(import.meta.url));
+const [cmd = "help", ...args] = process.argv.slice(2);
+const die = (msg) => { console.error(msg); process.exit(1); };
+const readJson = (p) => JSON.parse(readFileSync(p, "utf8"));
+const today = () => new Date().toLocaleDateString("sv-SE"); // YYYY-MM-DD（この Mac の日付）
+const subdirs = (p) => (existsSync(p) ? readdirSync(p, { withFileTypes: true }).filter((d) => d.isDirectory() && !/^[._]/.test(d.name)).map((d) => d.name).sort() : []);
+const rel = (p) => relative(ROOT, p);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+const kinds = () => subdirs(join(ROOT, "kinds"))
+  .filter((k) => existsSync(join(ROOT, "kinds", k, "kind.json")))
+  .map((k) => ({ ...readJson(join(ROOT, "kinds", k, "kind.json")), name: k, dir: join(ROOT, "kinds", k) }));
+const projects = () => subdirs(join(ROOT, "projects"))
+  .filter((p) => existsSync(join(ROOT, "projects", p, "project.json")))
+  .map((p) => ({ ...readJson(join(ROOT, "projects", p, "project.json")), id: p, dir: join(ROOT, "projects", p) }));
+const projectOf = (id) => {
+  if (!id) die("ID を指定する（./studio list で確認）");
+  const p = projects().find((x) => x.id === id);
+  if (!p) die(`動画が無い: ${id}（./studio list で確認）`);
+  const kind = kinds().find((k) => k.name === p.kind);
+  if (!kind) die(`${id} の作り方「${p.kind}」が kinds/ に無い`);
+  return { ...p, kindDir: kind.dir, out: join(ROOT, "out", id), mp4: join(ROOT, "out", id, `${id}.mp4`) };
+};
+
+// 書き出しを始める間隔を空ける。同じ瞬間に2つ始めると、Remotion が動かないまま止まることがあった
+// （2026-11-14 に2回。原因は確かめていない）。始めてから GAP 秒は、ほかの書き出しを待たせる。その後は並んで走る
+const GAP_MS = 8000, STARTING = join(ROOT, "out", ".starting");
+let holding = false;
+const release = () => { if (holding) { holding = false; try { rmdirSync(STARTING); } catch {} } };
+const takeTurn = async () => {
+  mkdirSync(join(ROOT, "out"), { recursive: true });
+  for (let told = false; ;) {
+    try { mkdirSync(STARTING); break; } catch {
+      let age = Infinity;
+      try { age = Date.now() - statSync(STARTING).mtimeMs; } catch {}
+      if (age > GAP_MS * 3) { try { rmdirSync(STARTING); } catch {} continue; } // 落ちた書き出しが残した札
+      if (!told) { console.log("ほかの書き出しが始まったところなので、少し待つ"); told = true; }
+      await sleep(500);
+    }
+  }
+  holding = true;
+  setTimeout(release, GAP_MS).unref();
+};
+process.on("exit", release);
+
+// 作り方のスクリプトを走らせる。作業フォルダはリポジトリの直下。場所は環境変数で渡す。
+// limitMin を渡すと、その分数を超えたら止める（止まったまま待ち続けないように）。STUDIO_LIMIT_MIN で変えられる
+const runKind = async (kindDir, script, id, rest, limitMin = 0) => {
+  const file = join(kindDir, script);
+  if (!existsSync(file)) die(`この作り方には ${script} が無い: ${rel(kindDir)}`);
+  if (limitMin) await takeTurn();
+  const limit = Number(process.env.STUDIO_LIMIT_MIN) || limitMin;
+  return new Promise((done) => {
+    const child = spawn(file, [id, ...rest], {
+      cwd: ROOT, stdio: "inherit", detached: true, // 自分の組にして、止めるときに子（Chrome など）ごと止める
+      env: { ...process.env, STUDIO_ROOT: ROOT, STUDIO_KIND: kindDir, STUDIO_PROJECT: join(ROOT, "projects", id), STUDIO_OUT: join(ROOT, "out", id) },
+    });
+    // 止めるときは、子と、その子孫（npm・Remotion・Chrome）を全部止める。親だけ止めると、書き出しが裏で走り続ける
+    const family = (roots) => {
+      const rows = spawnSync("ps", ["-Ao", "pid=,ppid="], { encoding: "utf8" }).stdout.trim().split("\n").map((l) => l.trim().split(/\s+/).map(Number));
+      const all = [...roots];
+      for (let i = 0; i < all.length; i++) for (const [pid, ppid] of rows) if (ppid === all[i] && !all.includes(pid)) all.push(pid);
+      return all.reverse();
+    };
+    const send = (pids, sig) => { for (const pid of pids) { try { process.kill(pid, sig); } catch {} } };
+    // まず穏やかに止め、少し待ってから、そのあいだに増えた子（Chrome など）も含めて強制で止める
+    const stopAll = (after) => {
+      const first = family([child.pid]); // 止める前に控える（親が先に消えると、子をたどれなくなる）
+      send(first, "SIGTERM");
+      setTimeout(() => { send(family(first), "SIGKILL"); after(); }, 2000);
+    };
+    let timedOut = false;
+    const timer = limit ? setTimeout(() => {
+      timedOut = true;
+      stopAll(() => {
+        console.error(`${limit} 分たっても終わらないので止めた。同じコマンドを打ち直す。長い動画なら STUDIO_LIMIT_MIN=<分> を付けて延ばす`);
+        done(124);
+      });
+    }, limit * 60000) : null;
+    for (const sig of ["SIGINT", "SIGTERM"]) process.on(sig, () => stopAll(() => { release(); process.exit(130); }));
+    child.on("error", (e) => die(`${rel(file)} を実行できない: ${e.message}`));
+    child.on("exit", (code) => {
+      if (timedOut) return; // 後始末は、時間切れの側で済ませてから終わる
+      if (timer) clearTimeout(timer);
+      done(code ?? 1);
+    });
+  });
+};
+const sh = (bin, argv) => {
+  const r = spawnSync(bin, argv, { encoding: "utf8" });
+  if (r.status !== 0) die(`${bin} が失敗: ${(r.stderr || "").trim().split("\n").slice(-3).join("\n")}`);
+  return r.stdout;
+};
+// mp4 の大きさ・fps・コマ数・長さ・音の有無・色の形式
+const probe = (file) => {
+  const j = JSON.parse(sh("ffprobe", ["-v", "error", "-count_frames", "-show_entries", "stream=codec_type,width,height,r_frame_rate,nb_read_frames,pix_fmt:format=duration", "-of", "json", file]));
+  const v = j.streams.find((s) => s.codec_type === "video"), [n, d] = v.r_frame_rate.split("/").map(Number);
+  return { width: v.width, height: v.height, fps: Math.round((n / d) * 100) / 100, frames: +v.nb_read_frames, durationSec: Math.round(+j.format.duration * 100) / 100, audio: j.streams.some((s) => s.codec_type === "audio"), pixFmt: v.pix_fmt, sizeMB: Math.round(statSync(file).size / 1e5) / 10 };
+};
+// 0%・25%・50%・70%・95% のコマを横に並べた1枚
+const sheet = (file, frames, to) => {
+  const sel = [0, 0.25, 0.5, 0.7, 0.95].map((r) => `eq(n,${Math.min(frames - 1, Math.round(r * frames))})`).join("+");
+  sh("ffmpeg", ["-y", "-v", "error", "-i", file, "-vf", `select='${sel}',scale=432:-1,tile=5x1`, "-frames:v", "1", "-q:v", "3", to]);
+};
+
+// 新しい動画に置く、絵コンテの下書き
+const storyboard = (title) => `# ${title}：絵コンテ
+
+作り込む前に、これを書いて見せ、承認を取る。
+
+## 何を作るか
+
+（何を伝える動画かを1文で。誰が見るか。どこに出すか。縦か横か。長さ）
+
+## 出どころ
+
+（画面に出す現実の数字や事実ごとに、どこから取ったか。計算した値は、検算の式）
+
+## 場面
+
+| 秒 | 絵（何が写り、何が動くか） | 言葉・数字 | 音・演出 |
+| --- | --- | --- | --- |
+|  |  |  |  |
+
+## 承認
+
+（見せた日と、返事）
+
+## 承認のあとで変えた所
+
+（場面の数・順番・結論を変えるときは、もう一度見せる。場面の中の細かい直しは、ここに書いて進める）
+`;
+
+const index = () => {
+  const lib = join(ROOT, "library");
+  const rows = subdirs(lib).filter((d) => existsSync(join(lib, d, "meta.json"))).map((d) => ({ dir: d, ...readJson(join(lib, d, "meta.json")) })).sort((a, b) => (a.dir < b.dir ? 1 : -1));
+  const cell = (s) => String(s ?? "").replaceAll("|", "／").replaceAll("\n", " ");
+  const lines = [
+    "# 出来上がった動画", "",
+    "`./studio keep <ID>` が収めた物の一覧。このファイルは `./studio index` が作り直すので、手で書き換えない。",
+    "メモや公開先を直すときは、各フォルダの `meta.json` を直してから `./studio index`。", "",
+    "| 収めた日 | 動画 | 題 | 作り方 | 長さ | 画面 | 公開先 | メモ |", "| --- | --- | --- | --- | --- | --- | --- | --- |",
+    ...rows.map((m) => `| ${cell(m.kept)} | [${cell(m.id)}](${m.dir}/) | ${cell(m.title)} | ${cell(m.kind)} | ${cell(m.durationSec)}秒 | ${m.width}×${m.height} | ${cell((m.published ?? []).join(" "))} | ${cell(m.note)} |`),
+    "",
+  ];
+  mkdirSync(lib, { recursive: true });
+  writeFileSync(join(lib, "INDEX.md"), lines.join("\n"));
+  return rows.length;
+};
+
+const commands = {
+  kinds() {
+    for (const k of kinds()) console.log(`${k.name.padEnd(18)} ${k.summary ?? ""}\n${" ".repeat(19)}向いている動画: ${k.for ?? ""}\n${" ".repeat(19)}手引き: ${rel(join(k.dir, "GUIDE.md"))}`);
+  },
+  async new() {
+    const [kindName, id, title = id] = args;
+    const kind = kinds().find((k) => k.name === kindName);
+    if (!kind) die(`作り方を指定する: ${kinds().map((k) => k.name).join(" / ")}\n  ./studio new <作り方> <ID> ["題名"]`);
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(id ?? "")) die("ID は半角の英小文字・数字・ハイフンで付ける（例: neko-jump）");
+    const dir = join(ROOT, "projects", id);
+    if (existsSync(dir)) die(`もうある: ${rel(dir)}`);
+    if ((await runKind(kind.dir, "new.sh", id, [title])) !== 0 || !existsSync(dir)) die("雛形を作れなかった（上の出力を見ること）");
+    writeFileSync(join(dir, "project.json"), JSON.stringify({ id, kind: kind.name, title, created: today() }, null, 2) + "\n");
+    if (!existsSync(join(dir, "storyboard.md"))) writeFileSync(join(dir, "storyboard.md"), storyboard(title));
+    console.log(`${rel(dir)}/ を作った（作り方: ${kind.name}）。`);
+    console.log(`次にすること: ${rel(join(kind.dir, "GUIDE.md"))} を読み、${rel(join(dir, "storyboard.md"))} に絵コンテを書いて、承認を取る。雛形を書き換えるのは、そのあと`);
+  },
+  list() {
+    const lib = subdirs(join(ROOT, "library"));
+    for (const p of projects()) {
+      const out = existsSync(join(ROOT, "out", p.id, `${p.id}.mp4`)) ? "書き出し済み" : "未書き出し　";
+      const kept = lib.filter((d) => d.endsWith(`_${p.id}`) || d.includes(`_${p.id}_`)).length;
+      console.log(`${p.id.padEnd(22)} ${String(p.kind).padEnd(16)} ${out} ${kept ? `library ${kept}本` : "　　　　　"}  ${p.title ?? ""}`);
+    }
+  },
+  async preview() { const p = projectOf(args[0]); process.exit(await runKind(p.kindDir, "preview.sh", p.id, args.slice(1), 15)); },
+  async render() {
+    const p = projectOf(args[0]), start = Date.now();
+    const rest = args.slice(1), sec = () => Math.round((Date.now() - start) / 1000);
+    if ((await runKind(p.kindDir, "render.sh", p.id, rest, 60)) !== 0) die("書き出しに失敗（上の出力を見ること）");
+    // --frames つきは、一部分だけの書き出し。完成品を上書きしないよう、作り方が別の名前で出す
+    if (rest.some((a) => a.startsWith("--frames"))) return console.log(`一部分だけの書き出し（${rest.join(" ")}）。出力は上の表示のとおり。完成品 ${rel(p.mp4)} は変えていない  ${sec()} 秒`);
+    if (!existsSync(p.mp4)) die(`書き出しは終わったが ${rel(p.mp4)} が無い（作り方の render.sh の出力先を確かめる）`);
+    console.log(`${rel(p.mp4)}  ${sec()} 秒`);
+  },
+  check() {
+    const p = projectOf(args[0]);
+    if (!existsSync(p.mp4)) die(`まだ書き出していない: ${rel(p.mp4)}（./studio render ${p.id}）`);
+    const info = probe(p.mp4), to = join(p.out, "check.jpg");
+    sheet(p.mp4, info.frames, to);
+    console.log(`${info.width}×${info.height}  ${info.fps}fps  ${info.frames}コマ  ${info.durationSec}秒  音${info.audio ? "あり" : "なし"}  ${info.pixFmt}  ${info.sizeMB}MB`);
+    if (!info.audio) console.log("※ 音声トラックが無い。投稿先で弾かれることがある（作り方の render.sh は、音が無い動画にも無音のトラックを付ける決まり）");
+    if (info.pixFmt !== "yuv420p") console.log(`※ 色の形式が ${info.pixFmt}。決まりは yuv420p（Remotion には --pixel-format=yuv420p --color-space=bt709 を付ける）`);
+    console.log(`${rel(to)}（0%・25%・50%・70%・95% のコマ。開いて目で見ること）`);
+  },
+  keep() {
+    // --from と --date は、前に別の場所で書き出した動画を取り込むとき用（--date は、その動画を作った日）
+    const p = projectOf(args[0]), opt = (name) => { const i = args.indexOf(name); return i > 0 ? args[i + 1] ?? "" : ""; };
+    const note = opt("--note"), src = opt("--from") || p.mp4, date = opt("--date") || today();
+    if (!existsSync(src)) die(opt("--from") ? `ファイルが無い: ${src}` : `まだ書き出していない: ${rel(p.mp4)}（./studio render ${p.id}）`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) die("--date は YYYY-MM-DD で書く");
+    const info = probe(src), lib = join(ROOT, "library");
+    let name = `${date}_${p.id}`;
+    for (let n = 2; existsSync(join(lib, name)); n++) name = `${date}_${p.id}_${n}`;
+    const dir = join(lib, name);
+    mkdirSync(dir, { recursive: true });
+    copyFileSync(src, join(dir, `${p.id}.mp4`));
+    sheet(src, info.frames, join(dir, "sheet.jpg"));
+    sh("ffmpeg", ["-y", "-v", "error", "-ss", String(info.durationSec * 0.3), "-i", src, "-frames:v", "1", "-vf", "scale='min(720,iw)':-2", "-q:v", "3", join(dir, "poster.jpg")]);
+    writeFileSync(join(dir, "meta.json"), JSON.stringify({ id: p.id, title: p.title ?? p.id, kind: p.kind, kept: date, file: `${p.id}.mp4`, ...info, project: `projects/${p.id}`, published: [], note }, null, 2) + "\n");
+    index();
+    console.log(`${rel(dir)}/ に収めた（${info.durationSec}秒・${info.sizeMB}MB）。公開したら meta.json の published に URL を足して ./studio index`);
+  },
+  index() { console.log(`library/INDEX.md を作り直した（${index()}本）`); },
+  help() { console.log(readFileSync(fileURLToPath(import.meta.url), "utf8").split("\n").slice(1, 14).map((l) => l.replace(/^\/\/ ?/, "")).join("\n")); },
+};
+await (commands[cmd] ?? commands.help)();

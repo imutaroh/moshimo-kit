@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./studio:*)",
+      "Bash(node:*)",
+      "Bash(npm ci)",
+      "Bash(ffmpeg:*)",
+      "Bash(ffprobe:*)",
+      "Bash(open:*)",
+      "Bash(ls:*)",
+      "Edit(projects/**)",
+      "Write(projects/**)"
+    ]
+  }
+}
